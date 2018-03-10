@@ -1,6 +1,16 @@
 ###--------Import libraries--------###
 library(readxl)
 library(tidyverse)
+library(tidyr)
+library(shiny)
+library(maps)
+library(ggmap)
+library(ggplot2)
+library(leaflet)
+library(stringr)
+
+##global.R
+##saveRDS file
 
 ###--------------------------------###
 
@@ -101,7 +111,20 @@ SNF_Report_2015 <- merge(SNF_Report_2015,SNF_Location,by="Provider_ID")
 SNF_Report_2015 <- SNF_Report_2015[c("Provider_ID", "Facility_Name", "Street_Address", "City", "State","Zip_Code","Total_Stays","Total_Beneficiaries","ALOS_Days","SNF_Amount","SNF_Medicare_Allowed_Amount","SNF_Medicare_Payment_Amount","SNF_Medicare_Standard_Payment_Amount",
                                      "Avg_Age","Male_Beneficiaries","Female_Beneficiaries","NonDual_Beneficiaries","Dual_Beneficiaries","White_Beneficiaries","Black_Beneficiaries","Asian_Beneficiaries","Hispanic_Beneficiaries","Native_Beneficiaries","Other_Beneficiaries","Average_HCC_Score","Pct_Beneficiaries_Asthma","Pct_Beneficiaries_Diabetes","Pct_Beneficiaries_Hyperlipidemia","Location")]
 
+SNF_Report_2015 <- separate(SNF_Report_2015, Location, into = c("long", "lat"), sep = ",")
+SNF_Report_2015$long <- as.numeric(gsub("\\(", "", SNF_Report_2015$long))
+SNF_Report_2015$lat <- as.numeric(gsub("\\)", "", SNF_Report_2015$lat))
+
+#View(SNF_TX)
 #View(SNF_Report_2015)
+
+#leaflet(SNF_TX) %>% addTiles() %>% addMarkers(lat = ~long, lng = ~lat) %>% setView(lng = -99.7331, lat = 32.4487, zoom = 5)
+
+#df <- SNF_Report_2015 %>% 
+  #group_by(State) %>%
+  #summarise(number = n())
+
+#View(df)
 
 ###############################################################Define Caclulated Fields###############################################################
 ##--Define calculated measures (total visits per disease, total cost per disease, avg cost per day at facility)
@@ -115,19 +138,22 @@ SNF_Report_2015 <- SNF_Report_2015[c("Provider_ID", "Facility_Name", "Street_Add
   
 #HH_Report_2014$Hyperlipidemia <- HH_Report_2014$Total_Stays*HH_Report_2014$Pct_Beneficiaries_Hyperlipidemia
   
+
 ##--SNF_Report_2014
-SNF_Report_2014$Cost_Per_Stay <- (SNF_Report_2014$SNF_Amount)/(SNF_Report_2014$Total_Stays)
+SNF_Report_2014$Cost_Per_Stay <- NA
 
-SNF_Report_2014$Cost_Per_Day <- (SNF_Report_2014$SNF_Amount)/(SNF_Report_2014$Total_Stays*SNF_Report_2014$ALOS_Days)
+SNF_Report_2014$Cost_Per_Day <- NA
 
+SNF_Report_2014$Total_Stays_Asthma <- NA
+  
+SNF_Report_2014$Diabetes <- NA
+  
+SNF_Report_2014$Hyperlipidemia <- NA
+
+SNF_Report_2014$Year <- '2014'
+  
 #View(SNF_Report_2014)
 
-#SNF_Report_2014$Total_Stays_Asthma <- SNF_Report_2014$Total_Stays*SNF_Report_2014$Pct_Beneficiaries_Asthma
-  
-#SNF_Report_2014$Diabetes <- SNF_Report_2014$Total_Stays*SNF_Report_2014$Pct_Beneficiaries_Diabetes
-  
-#SNF_Report_2014$Hyperlipidemia <- SNF_Report_2014$Total_Stays*SNF_Report_2014$Pct_Beneficiaries_Hyperlipidemia
-  
 ##--SNF_Report_2015
 SNF_Report_2015$Cost_Per_Stay <- (SNF_Report_2015$SNF_Amount)/(SNF_Report_2015$Total_Stays)
 
@@ -139,8 +165,18 @@ SNF_Report_2015$Total_Stays_Diabetes <- SNF_Report_2015$Total_Stays*SNF_Report_2
   
 SNF_Report_2015$Total_Stays_Hyperlipidemia <- SNF_Report_2015$Total_Stays*SNF_Report_2015$Pct_Beneficiaries_Hyperlipidemia
 
+SNF_Report_2015$Year <- '2015'
+
+SNF_2015_TX <- subset(SNF_Report_2015, State == "TX")
+
+SNF_2015_TX$Total_Stays_Asthma[is.na(SNF_2015_TX$Total_Stays_Asthma)] <- 0
+
+SNF_2015_TX$Total_Stays_Diabetes[is.na(SNF_2015_TX$Total_Stays_Diabetes)] <- 0
+
+SNF_2015_TX$Total_Stays_Hyperlipidemia[is.na(SNF_2015_TX$Total_Stays_Hyperlipidemia)] <- 0
+
+#View(SNF_2015_TX)
+
 ###############################################################Define Aggregate Dfs###############################################################
-
-##--Define Aggregate data sets 
-
+saveRDS(SNF_2015_TX, file = 'SNF_2015_TX.rds')
 
